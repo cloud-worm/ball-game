@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace BallGame
 {
+    // All player logic, including input, GameObject behaviour, and level environment handling.
     public class Player : MonoBehaviour
     {
         // Get current scene's level details
@@ -118,21 +119,31 @@ namespace BallGame
 
         private void TouchMoved()
         {
+            // `offset` is the vector from the mouse drag origin to the current mouse drag position
             offset = new Vector2(Input.mousePosition.x - startPos.x, Input.mousePosition.y - startPos.y);
+            // Interpolant to calculate force of shot based on drag distance (`offset.magnitude`).
+            // 1500 is an arbitrary value that works well (roughly based on screen resolutions)
             interp = math.clamp(offset.magnitude / 1500f, 0, 1);
+            // Show & rotate pointer when touching (i.e. 'aiming')
             pointerContainer.SetActive(true);
             RotatePointer();
         }
 
         private void TouchEnded()
         {
+            // Hide pointer
             pointerContainer.SetActive(false);
+            // Stay between `minPower` and `maxPower`, depending on that interpolant from before
             force = Mathf.Lerp(minPower, maxPower, interp);
+            // Stall ball (otherwise, impossible to go up if falling fast, etc)
             rigidBody2D.velocity = Vector2.zero;
+            // Shoot
             rigidBody2D.AddForce(offset.normalized * force, ForceMode2D.Impulse);
 
+            // `infiniteShots` is never used in game, mostly for debugging
             if (!infiniteShots)
             {
+                // Decrease amount of shots and update indicator
                 shots -= 1;
                 ShotsLabelUpd();
             }
@@ -159,7 +170,7 @@ namespace BallGame
             pointer.transform.localPosition = relativePointerPos;
         }
 
-        // Add `true` for "No more shots!"
+        // NOTE: Add `true` for "No more shots!"
         private void ShotsLabelUpd(bool zero = false)
         {
             shotsLabel.text = zero ? "No more shots!" : shots.ToString();
