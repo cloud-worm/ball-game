@@ -15,8 +15,12 @@ public class LevelDetails : MonoBehaviour
         { 3, 3 },
     };
 
-    public int NumAttempts()
+    [HideInInspector]
+    public Dictionary<int, Vector2> levelPos = new Dictionary<int, Vector2>()
     {
-        return levelAttempts[number];
-    }
+        { 1, new Vector2(-1, -2.3f) },
+    };
+
+    public int NumAttempts() { return levelAttempts[number]; }
+    public Vector2 StartPos() { return levelPos[number]; }
 }

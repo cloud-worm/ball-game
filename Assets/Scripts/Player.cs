@@ -1,7 +1,9 @@
-using System;
+using System.Collections;
 using TMPro;
 using Unity.Mathematics;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace BallGame
 {
@@ -23,10 +25,14 @@ namespace BallGame
         [Space]
         [Header("Attempts")]
         [SerializeField] private TextMeshProUGUI shotsLabel;
+        [SerializeField] private GameObject restartLabel;
         [SerializeField] private bool infiniteShots = false;
 
         // Variable to keep track of amount of shots
         private int shots;
+
+        private bool shouldRestart = false; // Used to restart if no more shots
+        private bool shouldPlay = true; // Used to determine if you can shoot
 
         private float interp = 0; // Interpolant for variable force calculation
         private float force; // Value of force to be applied to the ball
@@ -44,8 +50,10 @@ namespace BallGame
 
         private void Start()
         {
-            // Hide the pointer (it shouldn't appear until we touch it)
+            transform.position = currentLevel.StartPos();
+            // Hide the pointer (it shouldn't appear until we touch it), and the restart label
             pointerContainer.SetActive(false);
+            restartLabel.SetActive(false);
             // Get amount of attempts
             shots = currentLevel.NumAttempts();
             // Show amount of attemps
@@ -54,19 +62,20 @@ namespace BallGame
 
         void Update()
         {
+            Debug.Log(shouldRestart);
+
             // Make the pointer follow the player
             pointerContainer.transform.position = transform.position;
 
+            HandleTouches();
+
             // Can't shoot if no more shots!
-            if (shots > 0)
+            if (shots <= 0)
             {
-                // Handle screen touches and allow mouse touchscreen simulation
-                // Also handle touch actions
-                HandleTouches();
-            } else
-            {
+                shouldPlay = false;
                 // Indicate that shots are finished
-                ShotsLabelUpd(true);
+                ShotsLabelUpd(State.LEVEL_ENDED);
+                StartCoroutine("restartMsg");
             }
         }
 
@@ -75,17 +84,34 @@ namespace BallGame
         // Execute actions depending on the touch phase
         private void HandleTouch(int touchFingerId, Vector3 touchPosition, TouchPhase touchPhase)
         {
-            switch (touchPhase)
+            if (shouldPlay)
             {
-                case TouchPhase.Began:
-                    TouchBegan();
-                    break;
-                case TouchPhase.Moved:
-                    TouchMoved();
-                    break;
-                case TouchPhase.Ended:
-                    TouchEnded();
-                    break;
+                switch (touchPhase)
+                {
+                    case TouchPhase.Began:
+                        TouchBegan();
+                        break;
+                    case TouchPhase.Moved:
+                        TouchMoved();
+                        break;
+                    case TouchPhase.Ended:
+                        TouchEnded();
+                        break;
+                }
+            } 
+            
+            if (shouldRestart)
+            {
+                switch (touchPhase)
+                {
+                    case TouchPhase.Began:
+                        TouchBeganRestart();
+                        break;
+                    case TouchPhase.Moved:
+                        break;
+                    case TouchPhase.Ended:
+                        break;
+                }
             }
         }
         
@@ -117,6 +143,11 @@ namespace BallGame
             startPos = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
         }
 
+        private void TouchBeganRestart()
+        {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        }
+
         private void TouchMoved()
         {
             // `offset` is the vector from the mouse drag origin to the current mouse drag position
@@ -137,7 +168,7 @@ namespace BallGame
             force = Mathf.Lerp(minPower, maxPower, interp);
             // Stall ball (otherwise, impossible to go up if falling fast, etc)
             rigidBody2D.velocity = Vector2.zero;
-            // Shoot
+            // Shoot.
             rigidBody2D.AddForce(offset.normalized * force, ForceMode2D.Impulse);
 
             // `infiniteShots` is never used in game, mostly for debugging
@@ -170,12 +201,25 @@ namespace BallGame
             pointer.transform.localPosition = relativePointerPos;
         }
 
-        // NOTE: Add `true` for "No more shots!"
-        private void ShotsLabelUpd(bool zero = false)
+        private void ShotsLabelUpd(State state = State.LEVEL_PLAYING)
         {
-            shotsLabel.text = zero ? "No more shots!" : shots.ToString();
+            shotsLabel.text = state == State.LEVEL_ENDED ? "No more shots!" : shots.ToString();
+        }
+
+        // Coroutine to wait 1 second before allowing level restart.
+        private IEnumerator restartMsg()
+        {
+            yield return new WaitForSeconds(1);
+            shouldRestart = true;
+            restartLabel.SetActive(true);
         }
     }
+}
+
+public enum State
+{
+    LEVEL_PLAYING,
+    LEVEL_ENDED,
 }
 
 /// Legacy Update. Don't know why I'm keeping it here, it's pretty useless.
