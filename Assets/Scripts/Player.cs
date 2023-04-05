@@ -31,8 +31,10 @@ namespace BallGame
         // Variable to keep track of amount of shots
         private int shots;
 
-        private bool shouldRestart = false; // Used to restart if no more shots
-        private bool shouldPlay = true; // Used to determine if you can shoot
+        //private bool shouldRestart = false; // Used to restart if no more shots
+        //private bool shouldPlay = true; // Used to determine if you can shoot
+
+        State currentState = State.Playing;
 
         private float interp = 0; // Interpolant for variable force calculation
         private float force; // Value of force to be applied to the ball
@@ -62,7 +64,7 @@ namespace BallGame
 
         void Update()
         {
-            Debug.Log(shouldRestart);
+            Debug.Log(currentState.ToString());
 
             // Make the pointer follow the player
             pointerContainer.transform.position = transform.position;
@@ -72,9 +74,9 @@ namespace BallGame
             // Can't shoot if no more shots!
             if (shots <= 0)
             {
-                shouldPlay = false;
+                currentState = State.Lost;
                 // Indicate that shots are finished
-                ShotsLabelUpd(State.LEVEL_ENDED);
+                ShotsLabelUpd(State.Lost);
                 StartCoroutine("restartMsg");
             }
         }
@@ -84,34 +86,57 @@ namespace BallGame
         // Execute actions depending on the touch phase
         private void HandleTouch(int touchFingerId, Vector3 touchPosition, TouchPhase touchPhase)
         {
-            if (shouldPlay)
-            {
-                switch (touchPhase)
-                {
-                    case TouchPhase.Began:
-                        TouchBegan();
-                        break;
-                    case TouchPhase.Moved:
-                        TouchMoved();
-                        break;
-                    case TouchPhase.Ended:
-                        TouchEnded();
-                        break;
-                }
-            } 
+            //if (shouldPlay)
+            //{
+            //    switch (touchPhase)
+            //    {
+            //        case TouchPhase.Began:
+            //            TouchBegan();
+            //            break;
+            //        case TouchPhase.Moved:
+            //            TouchMoved();
+            //            break;
+            //        case TouchPhase.Ended:
+            //            TouchEnded();
+            //            break;
+            //    }
+            //} 
             
-            if (shouldRestart)
+            //if (shouldRestart)
+            //{
+            //    switch (touchPhase)
+            //    {
+            //        case TouchPhase.Began:
+            //            TouchBeganRestart();
+            //            break;
+            //        case TouchPhase.Moved:
+            //            break;
+            //        case TouchPhase.Ended:
+            //            break;
+            //    }
+            //}
+
+            switch (currentState)
             {
-                switch (touchPhase)
-                {
-                    case TouchPhase.Began:
+                case State.Playing:
+                    switch (touchPhase)
+                    {
+                        case TouchPhase.Began:
+                            TouchBegan();
+                            break;
+                        case TouchPhase.Moved:
+                            TouchMoved();
+                            break;
+                        case TouchPhase.Ended:
+                            TouchEnded();
+                            break;
+                    }
+                    break;
+
+                case State.CanRestart:
+                    if (touchPhase == TouchPhase.Began)
                         TouchBeganRestart();
-                        break;
-                    case TouchPhase.Moved:
-                        break;
-                    case TouchPhase.Ended:
-                        break;
-                }
+                    break;
             }
         }
         
@@ -201,16 +226,16 @@ namespace BallGame
             pointer.transform.localPosition = relativePointerPos;
         }
 
-        private void ShotsLabelUpd(State state = State.LEVEL_PLAYING)
+        private void ShotsLabelUpd(State state = State.Playing)
         {
-            shotsLabel.text = state == State.LEVEL_ENDED ? "No more shots!" : shots.ToString();
+            shotsLabel.text = state == State.Lost ? "No more shots!" : shots.ToString();
         }
 
         // Coroutine to wait 1 second before allowing level restart.
         private IEnumerator restartMsg()
         {
             yield return new WaitForSeconds(1);
-            shouldRestart = true;
+            currentState = State.CanRestart;
             restartLabel.SetActive(true);
         }
     }
@@ -218,8 +243,9 @@ namespace BallGame
 
 public enum State
 {
-    LEVEL_PLAYING,
-    LEVEL_ENDED,
+    Playing,
+    Lost,
+    CanRestart
 }
 
 /// Legacy Update. Don't know why I'm keeping it here, it's pretty useless.
