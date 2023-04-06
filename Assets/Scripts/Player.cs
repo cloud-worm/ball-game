@@ -1,9 +1,8 @@
 using System.Collections;
-using TMPro;
-using Unity.Mathematics;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Unity.Mathematics;
+using TMPro;
 
 namespace BallGame
 {
@@ -26,13 +25,11 @@ namespace BallGame
         [Header("Attempts")]
         [SerializeField] private TextMeshProUGUI shotsLabel;
         [SerializeField] private GameObject restartLabel;
+        [SerializeField] private float timeBeforeRestart = 1.5f;
         [SerializeField] private bool infiniteShots = false;
 
         // Variable to keep track of amount of shots
         private int shots;
-
-        //private bool shouldRestart = false; // Used to restart if no more shots
-        //private bool shouldPlay = true; // Used to determine if you can shoot
 
         State currentState = State.Playing;
 
@@ -64,8 +61,6 @@ namespace BallGame
 
         void Update()
         {
-            Debug.Log(currentState.ToString());
-
             // Make the pointer follow the player
             pointerContainer.transform.position = transform.position;
 
@@ -86,36 +81,6 @@ namespace BallGame
         // Execute actions depending on the touch phase
         private void HandleTouch(int touchFingerId, Vector3 touchPosition, TouchPhase touchPhase)
         {
-            //if (shouldPlay)
-            //{
-            //    switch (touchPhase)
-            //    {
-            //        case TouchPhase.Began:
-            //            TouchBegan();
-            //            break;
-            //        case TouchPhase.Moved:
-            //            TouchMoved();
-            //            break;
-            //        case TouchPhase.Ended:
-            //            TouchEnded();
-            //            break;
-            //    }
-            //} 
-            
-            //if (shouldRestart)
-            //{
-            //    switch (touchPhase)
-            //    {
-            //        case TouchPhase.Began:
-            //            TouchBeganRestart();
-            //            break;
-            //        case TouchPhase.Moved:
-            //            break;
-            //        case TouchPhase.Ended:
-            //            break;
-            //    }
-            //}
-
             switch (currentState)
             {
                 case State.Playing:
@@ -163,15 +128,11 @@ namespace BallGame
 
         #region Touch Actions
 
-        private void TouchBegan()
-        {
-            startPos = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
-        }
+        private void TouchBegan() 
+        { startPos = new Vector2(Input.mousePosition.x, Input.mousePosition.y); }
 
-        private void TouchBeganRestart()
-        {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-        }
+        private void TouchBeganRestart() 
+        { SceneManager.LoadScene(SceneManager.GetActiveScene().name); }
 
         private void TouchMoved()
         {
@@ -215,26 +176,24 @@ namespace BallGame
             Vector3 selfPos = Camera.main.WorldToScreenPoint(transform.position);
             mousePos.x = mousePos.x - selfPos.x;
             mousePos.y = mousePos.y - selfPos.y;
-
             float angle = Mathf.Atan2(offset.y, offset.x) * Mathf.Rad2Deg;
             pointerContainer.transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle));
 
             // Pointer animation (change distance depending on force)
-            Vector3 relativePointerPos = new Vector3(Mathf.Lerp(.5f, 1f, interp), 0, 0);
+            //Vector3 relativePointerPos = new Vector3(Mathf.Lerp(.5f, 1f, interp), 0, 0);
+            Vector3 relativePointerPos = Vector3.Lerp(new Vector3(.5f, 0), new Vector3(1f, 0), interp);
             Vector3 relativePointerScale = new Vector3(Mathf.Lerp(.18f, .4f, interp), Mathf.Lerp(.18f, .4f, interp), 0);
             pointer.transform.localScale = relativePointerScale;
             pointer.transform.localPosition = relativePointerPos;
         }
 
         private void ShotsLabelUpd(State state = State.Playing)
-        {
-            shotsLabel.text = state == State.Lost ? "No more shots!" : shots.ToString();
-        }
+        { shotsLabel.text = state == State.Lost ? "No more shots!" : shots.ToString(); }
 
         // Coroutine to wait 1 second before allowing level restart.
         private IEnumerator restartMsg()
         {
-            yield return new WaitForSeconds(1);
+            yield return new WaitForSeconds(timeBeforeRestart);
             currentState = State.CanRestart;
             restartLabel.SetActive(true);
         }

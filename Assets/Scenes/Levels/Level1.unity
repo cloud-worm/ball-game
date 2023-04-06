@@ -1677,6 +1677,7 @@ MonoBehaviour:
   rigidBody2D: {fileID: 2014171051}
   shotsLabel: {fileID: 1626750260}
   restartLabel: {fileID: 577590837}
+  timeBeforeRestart: 2
   infiniteShots: 0
 --- !u!1 &2033994536
 GameObject:

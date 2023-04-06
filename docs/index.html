@@ -4,13 +4,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ball-game.md</title>
+  <title>Ball Game</title>
   <link rel="stylesheet" href="https://stackedit.io/style.css" />
 </head>
 
 <body class="stackedit">
   <div class="stackedit__html"><h2 align="center">ball game</h2>
-<p align="center"><b>a small mobile game made in C# with the Unity engine</b><br><em>made by Cloud Worm in 2023</em></p>
+<p align="center"><b>a small mobile game made in C# with the Unity engine</b><br><em>made by <a href="https://cloud-worm.github.io/" target="_blank">Cloud Worm</a> in 2023</em></p>
 <br>
 <h3 id="the-game">The Game</h3>
 <p>Ball Game is a physics-based game. You control a ball that you can shoot in any direction, with variable force; however, you may only shoot when the ball is touching something else, like a wall or the floor. You also have a limited amount of shots for each level, meaning that you must time each shot perfectly right.</p>
@@ -30,6 +30,34 @@
 <li>Building from source allows building towards iOS, desktop, etc. Note that you will need to have Unity installed.</li>
 <li>Hopefully I’ll get it published on Google Play soon. iOS will probably have to wait a little longer though 😊</li>
 </ul>
+<h3 id="unity-nerd-stuff">Unity nerd stuff</h3>
+<p>Several tricks are used in the code to make it more performant and easier to read — in fact, creating clear, efficient code was of my main goals here, since my scripts sometimes end up unreadable. For example, instead of using a bunch of booleans and therefore having many unnecessary binary operations, I used a simple <code>enum</code> to represent each state of the player control:</p>
+<pre class=" language-csharp"><code class="prism  language-csharp"><span class="token keyword">public</span> <span class="token keyword">enum</span> State
+<span class="token punctuation">{</span>
+    Playing<span class="token punctuation">,</span>
+    Ended<span class="token punctuation">,</span>
+    CanRestart<span class="token punctuation">,</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>Each state corresponds to what the player can do at a given time — <code>Ended</code> is when they lose, for example, and <code>CanRestart</code> is when they can touch the screen to try a failed level again.</p>
+<p>To access specific data for each level (such as the amount of shots the player has), I have created a class called <code>LevelDetails</code>, which contains public variables that I can access in the <code>Player.cs</code> script and methods that allow me to fetch level data. This is probably not optimal, but it works well and is quite practical. Here’s an example:</p>
+<pre class=" language-csharp"><code class="prism  language-csharp"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">LevelDetails</span>
+<span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">int</span> number<span class="token punctuation">;</span> <span class="token comment">// Level number</span>
+	
+    <span class="token punctuation">[</span>HideInInspector<span class="token punctuation">]</span>
+    <span class="token keyword">public</span> Dictionary<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token punctuation">,</span> <span class="token keyword">int</span><span class="token operator">&gt;</span> levelAttempts <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Dictionary</span><span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token punctuation">,</span> <span class="token keyword">int</span><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">{</span>
+        <span class="token punctuation">{</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span> <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token punctuation">{</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">2</span> <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token punctuation">{</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">3</span> <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">}</span><span class="token punctuation">;</span>
+    <span class="token comment">// [...]</span>
+<span class="token punctuation">}</span>
+</code></pre>
+<p>This class also boasts the following function, facilitating data retrieval:</p>
+<pre class=" language-csharp"><code class="prism  language-csharp"><span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">NumAttempts</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token keyword">return</span> levelAttempts<span class="token punctuation">[</span>number<span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token punctuation">}</span>
+</code></pre>
 </div>
 </body>
 
