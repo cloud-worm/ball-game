@@ -1,0 +1,7 @@
+TODO
+
+ [x] Colour pointer and optimise pointer animation
+ [x] Jumping exclusive to walls
+ [ ] Add objective
+ [ ] Add passing to new level
+ [ ] Add different wall materials (ex. bouncy)
