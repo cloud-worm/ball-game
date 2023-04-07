@@ -135,9 +135,9 @@ GameObject:
   - component: {fileID: 455881667}
   - component: {fileID: 455881666}
   - component: {fileID: 455881665}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Wall (1)
-  m_TagString: Untagged
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -723,9 +723,9 @@ GameObject:
   - component: {fileID: 934594771}
   - component: {fileID: 934594770}
   - component: {fileID: 934594769}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Wall (3)
-  m_TagString: Untagged
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -948,9 +948,9 @@ GameObject:
   - component: {fileID: 1169370110}
   - component: {fileID: 1169370109}
   - component: {fileID: 1169370108}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Wall (2)
-  m_TagString: Untagged
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1672,6 +1672,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   minPower: 5
   maxPower: 9
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 8
   pointerContainer: {fileID: 1009411296}
   pointer: {fileID: 1193764417}
   rigidBody2D: {fileID: 2014171051}
@@ -1691,9 +1694,9 @@ GameObject:
   - component: {fileID: 2033994540}
   - component: {fileID: 2033994539}
   - component: {fileID: 2033994538}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Wall (4)
-  m_TagString: Untagged
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

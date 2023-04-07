@@ -18,6 +18,7 @@ namespace BallGame
         [SerializeField] private float maxPower = 10f;
         [Space]
         [Header("Objects/Components")]
+        [SerializeField] private LayerMask wallLayer = 3;
         [SerializeField] private GameObject pointerContainer;
         [SerializeField] private GameObject pointer;
         [SerializeField] private Rigidbody2D rigidBody2D;
@@ -31,7 +32,8 @@ namespace BallGame
         // Variable to keep track of amount of shots
         private int shots;
 
-        State currentState = State.Playing;
+        //private bool canShoot = false;
+        private State currentState = State.Playing;
 
         private float interp = 0; // Interpolant for variable force calculation
         private float force; // Value of force to be applied to the ball
@@ -61,6 +63,8 @@ namespace BallGame
 
         void Update()
         {
+            Debug.Log(Physics2D.OverlapCircle(transform.position, .4f, wallLayer));
+
             // Make the pointer follow the player
             pointerContainer.transform.position = transform.position;
 
@@ -75,6 +79,16 @@ namespace BallGame
                 StartCoroutine("restartMsg");
             }
         }
+
+        //private void OnCollisionEnter2D(Collision2D collision)
+        //{
+        //    canShoot = true;
+        //}
+
+        //private void OnCollisionExit2D(Collision2D collision)
+        //{
+        //    canShoot = false;
+        //}
 
         #region Touch Logic
 
@@ -128,11 +142,9 @@ namespace BallGame
 
         #region Touch Actions
 
-        private void TouchBegan() 
-        { startPos = new Vector2(Input.mousePosition.x, Input.mousePosition.y); }
+        private void TouchBegan() { startPos = new Vector2(Input.mousePosition.x, Input.mousePosition.y); }
 
-        private void TouchBeganRestart() 
-        { SceneManager.LoadScene(SceneManager.GetActiveScene().name); }
+        private void TouchBeganRestart() { SceneManager.LoadScene(SceneManager.GetActiveScene().name); }
 
         private void TouchMoved()
         {
@@ -141,9 +153,12 @@ namespace BallGame
             // Interpolant to calculate force of shot based on drag distance (`offset.magnitude`).
             // 1500 is an arbitrary value that works well (roughly based on screen resolutions)
             interp = math.clamp(offset.magnitude / 1500f, 0, 1);
-            // Show & rotate pointer when touching (i.e. 'aiming')
-            pointerContainer.SetActive(true);
+            // Color pointer depending on ability to shoot
+            pointer.GetComponent<SpriteRenderer>().color = CheckOnWall() ? new Color(0, 0.422f, 1) : Color.red;
+            // Show & rotate pointer when pressing (i.e. 'aiming'), but only when moved (otherwise, no good direction)
             RotatePointer();
+            if (offset.magnitude != 0)
+                pointerContainer.SetActive(true);
         }
 
         private void TouchEnded()
@@ -152,10 +167,15 @@ namespace BallGame
             pointerContainer.SetActive(false);
             // Stay between `minPower` and `maxPower`, depending on that interpolant from before
             force = Mathf.Lerp(minPower, maxPower, interp);
-            // Stall ball (otherwise, impossible to go up if falling fast, etc)
-            rigidBody2D.velocity = Vector2.zero;
-            // Shoot.
-            rigidBody2D.AddForce(offset.normalized * force, ForceMode2D.Impulse);
+
+            // Shoot if on wall
+            if (CheckOnWall())
+            {
+                // Stall ball (otherwise, impossible to go up if falling fast, etc)
+                rigidBody2D.velocity = Vector2.zero;
+                // Shoot
+                rigidBody2D.AddForce(offset.normalized * force, ForceMode2D.Impulse);
+            }
 
             // `infiniteShots` is never used in game, mostly for debugging
             if (!infiniteShots)
@@ -187,8 +207,12 @@ namespace BallGame
             pointer.transform.localPosition = relativePointerPos;
         }
 
-        private void ShotsLabelUpd(State state = State.Playing)
-        { shotsLabel.text = state == State.Lost ? "No more shots!" : shots.ToString(); }
+        private void ShotsLabelUpd(State state = State.Playing) { shotsLabel.text = state == State.Lost ? "No more shots!" : shots.ToString(); }
+
+        private bool CheckOnWall()
+        {
+            return Physics2D.OverlapCircle(transform.position, .4f, wallLayer) != null;
+        }
 
         // Coroutine to wait 1 second before allowing level restart.
         private IEnumerator restartMsg()
