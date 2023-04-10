@@ -1,7 +1,16 @@
-TODO
+meanings:
+[x] Completed
+[.] WIP
+[ ] Not attempted
 
- [x] Colour pointer and optimise pointer animation
- [x] Jumping exclusive to walls
- [ ] Add objective
- [ ] Add passing to new level
- [ ] Add different wall materials (ex. bouncy)
+TODO
+[x] Colour pointer and optimise pointer animation
+[x] Jumping exclusive to walls
+[x] Add objective
+[ ] Start creating new levels
+[x] Add passing to new level
+[ ] Add different wall materials (ex. bouncy)
+[ ] Add "zone materials" (ex. zone that allows shooting in mid-air)
+
+ISSUES
+[x] Restart/advance conflict

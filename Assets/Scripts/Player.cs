@@ -29,10 +29,9 @@ namespace BallGame
         [SerializeField] private float timeBeforeRestart = 1.5f;
         [SerializeField] private bool infiniteShots = false;
 
-        // Variable to keep track of amount of shots
-        private int shots;
+        private int shots; // Variable to keep track of amount of shots
 
-        //private bool canShoot = false;
+        private bool gotObjective = false; // Stays true if any IsObjective()
         private State currentState = State.Playing;
 
         private float interp = 0; // Interpolant for variable force calculation
@@ -51,7 +50,9 @@ namespace BallGame
 
         private void Start()
         {
-            transform.position = currentLevel.StartPos();
+            // timeScale is global, we must reset it
+            Time.timeScale = 1;
+
             // Hide the pointer (it shouldn't appear until we touch it), and the restart label
             pointerContainer.SetActive(false);
             restartLabel.SetActive(false);
@@ -63,32 +64,41 @@ namespace BallGame
 
         void Update()
         {
-            Debug.Log(Physics2D.OverlapCircle(transform.position, .4f, wallLayer));
+            // Debug
+            Debug.Log(currentState.ToString());
 
             // Make the pointer follow the player
             pointerContainer.transform.position = transform.position;
 
             HandleTouches();
+            
+            // Legacy.
+            //if (IsObjective())
+            //{
+            //    Time.timeScale = .1f;
+            //    currentState = State.CanAdvance;
+            //    restartLabel.GetComponent<TextMeshProUGUI>().text = "TOUCH SCREEN TO ADVANCE";
+            //    restartLabel.SetActive(true);
+            //}
+            //else if (shots <= 0)
+            //{
+            //    currentState = State.Lost;
+            //    // Indicate that shots are finished
+            //    ShotsLabelUpd(State.Lost);
+            //    StartCoroutine(restartMsg());
+            //}
 
-            // Can't shoot if no more shots!
+            if (IsObjective())
+            {
+                Time.timeScale = .1f;
+                gotObjective = true;
+            }
+
             if (shots <= 0)
             {
-                currentState = State.Lost;
-                // Indicate that shots are finished
-                ShotsLabelUpd(State.Lost);
-                StartCoroutine("restartMsg");
+                StartCoroutine(endMsg());
             }
         }
-
-        //private void OnCollisionEnter2D(Collision2D collision)
-        //{
-        //    canShoot = true;
-        //}
-
-        //private void OnCollisionExit2D(Collision2D collision)
-        //{
-        //    canShoot = false;
-        //}
 
         #region Touch Logic
 
@@ -115,6 +125,11 @@ namespace BallGame
                 case State.CanRestart:
                     if (touchPhase == TouchPhase.Began)
                         TouchBeganRestart();
+                    break;
+
+                case State.CanAdvance:
+                    if (touchPhase == TouchPhase.Began)
+                        TouchBeganAdvance();
                     break;
             }
         }
@@ -146,6 +161,8 @@ namespace BallGame
 
         private void TouchBeganRestart() { SceneManager.LoadScene(SceneManager.GetActiveScene().name); }
 
+        private void TouchBeganAdvance() { SceneManager.LoadScene("Level" + (currentLevel.number + 1).ToString()); }
+
         private void TouchMoved()
         {
             // `offset` is the vector from the mouse drag origin to the current mouse drag position
@@ -153,8 +170,12 @@ namespace BallGame
             // Interpolant to calculate force of shot based on drag distance (`offset.magnitude`).
             // 1500 is an arbitrary value that works well (roughly based on screen resolutions)
             interp = math.clamp(offset.magnitude / 1500f, 0, 1);
+
+            // Slow down time!
+            //Time.timeScale = .5f;
+
             // Color pointer depending on ability to shoot
-            pointer.GetComponent<SpriteRenderer>().color = CheckOnWall() ? new Color(0, 0.422f, 1) : Color.red;
+            pointer.GetComponent<SpriteRenderer>().color = IsNormalWall() ? new Color(0, 0.422f, 1) : Color.red;
             // Show & rotate pointer when pressing (i.e. 'aiming'), but only when moved (otherwise, no good direction)
             RotatePointer();
             if (offset.magnitude != 0)
@@ -163,13 +184,15 @@ namespace BallGame
 
         private void TouchEnded()
         {
+            // Time is normal again.
+            //Time.timeScale = 1f;
             // Hide pointer
             pointerContainer.SetActive(false);
+
             // Stay between `minPower` and `maxPower`, depending on that interpolant from before
             force = Mathf.Lerp(minPower, maxPower, interp);
-
             // Shoot if on wall
-            if (CheckOnWall())
+            if (IsNormalWall())
             {
                 // Stall ball (otherwise, impossible to go up if falling fast, etc)
                 rigidBody2D.velocity = Vector2.zero;
@@ -177,7 +200,7 @@ namespace BallGame
                 rigidBody2D.AddForce(offset.normalized * force, ForceMode2D.Impulse);
             }
 
-            // `infiniteShots` is never used in game, mostly for debugging
+            // `infiniteShots` is never used in the real game, it's mostly for debugging
             if (!infiniteShots)
             {
                 // Decrease amount of shots and update indicator
@@ -207,18 +230,37 @@ namespace BallGame
             pointer.transform.localPosition = relativePointerPos;
         }
 
-        private void ShotsLabelUpd(State state = State.Playing) { shotsLabel.text = state == State.Lost ? "No more shots!" : shots.ToString(); }
-
-        private bool CheckOnWall()
+        private void ShotsLabelUpd(State state = State.Playing) 
         {
-            return Physics2D.OverlapCircle(transform.position, .4f, wallLayer) != null;
+            shotsLabel.text = state == State.Lost ? "No more shots!" : shots.ToString();
         }
 
+        // Get any kind of wall if touching it (can be objective, normal wall...). /*Allow a small buffer zone.*/
+        private Collider2D CheckCollision() 
+        { 
+            return Physics2D.OverlapCircle(
+                transform.position, 
+                transform.localScale.magnitude / 4f /*+ transform.localScale.magnitude / 10f*/, 
+                wallLayer); 
+        }
+
+        private bool IsNormalWall() { return CheckCollision() != null && CheckCollision().tag == "Wall"; }
+        private bool IsObjective() { return CheckCollision() != null && CheckCollision().tag == "Objective"; }
+
         // Coroutine to wait 1 second before allowing level restart.
-        private IEnumerator restartMsg()
+        private IEnumerator endMsg()
         {
             yield return new WaitForSeconds(timeBeforeRestart);
-            currentState = State.CanRestart;
+            if (gotObjective)
+            {
+                restartLabel.GetComponent<TextMeshProUGUI>().text = "TOUCH SCREEN TO ADVANCE";
+                currentState = State.CanAdvance;
+            }
+            else
+            {
+                restartLabel.GetComponent<TextMeshProUGUI>().text = "TOUCH SCREEN TO RESTART";
+                currentState = State.CanRestart;
+            }
             restartLabel.SetActive(true);
         }
     }
@@ -228,32 +270,7 @@ public enum State
 {
     Playing,
     Lost,
-    CanRestart
+    CanRestart,
+    Won,
+    CanAdvance
 }
-
-/// Legacy Update. Don't know why I'm keeping it here, it's pretty useless.
-//private void Update()
-//{
-//    if (Input.touchCount != 1)
-//    {
-//        dragging = false;
-//        return;
-//    }
-//
-//    Touch touch = Input.touches[0];
-//
-//    if (touch.phase == TouchPhase.Began)
-//        startPos = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
-//
-//    if (touch.phase == TouchPhase.Moved)
-//    {
-//        offset = new Vector2(Input.mousePosition.x - startPos.x, Input.mousePosition.y - startPos.y);
-//        Debug.Log(offset);
-//    }
-//
-//    if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
-//    {
-//        dragging = false;
-//        rb.AddForce(offset, ForceMode2D.Impulse);
-//    }
-//}

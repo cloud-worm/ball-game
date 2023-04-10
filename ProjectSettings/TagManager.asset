@@ -7,6 +7,7 @@ TagManager:
   - PlayerBall
   - origin
   - Wall
+  - Objective
   layers:
   - Default
   - TransparentFX

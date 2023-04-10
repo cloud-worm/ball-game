@@ -10,17 +10,10 @@ public class LevelDetails : MonoBehaviour
     [HideInInspector]
     public Dictionary<int, int> levelAttempts = new Dictionary<int, int>()
     {
-        { 1, 1 },
-        { 2, 2 },
-        { 3, 3 },
-    };
-
-    [HideInInspector]
-    public Dictionary<int, Vector2> levelPos = new Dictionary<int, Vector2>()
-    {
-        { 1, new Vector2(-1, -2.3f) },
+        { 1, 2 },
+        { 2, 1 },
+        { 3, 2 },
     };
 
     public int NumAttempts() { return levelAttempts[number]; }
-    public Vector2 StartPos() { return levelPos[number]; }
 }

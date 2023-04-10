@@ -7,8 +7,9 @@ namespace BallGame
     public class FrameRateManager : MonoBehaviour
     {
         [Header("Frame Settings")]
-        [SerializeField] private int maxRate = 9999;
         [SerializeField] private float targetFrameRate = 60f;
+
+        private int maxRate = 9999;
 
         private float currentFrameTime;
 
@@ -17,7 +18,7 @@ namespace BallGame
             QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = maxRate;
             currentFrameTime = Time.realtimeSinceStartup;
-            StartCoroutine("WaitForNextFrame");
+            StartCoroutine(WaitForNextFrame());
         }
 
         private IEnumerator WaitForNextFrame()
